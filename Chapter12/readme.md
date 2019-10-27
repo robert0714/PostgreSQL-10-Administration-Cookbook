@@ -2,6 +2,9 @@
 PSR (Physical Streaming Replication)  has two main way to set up streaming replication:
 *  with an additional archive
 *  without an additional archive
+
+Creating user
+
 ```bash
 [root@node1 vagrant]# su - postgres 
 -bash-4.2$    psql 
@@ -18,6 +21,27 @@ postgres=# \list
  template1 | postgres | UTF8     | en_US.UTF-8 | en_US.UTF-8 | =c/postgres          +
            |          |          |             |             | postgres=CTc/postgres
 (3 rows)
+
+postgres=# \du
+                                   List of roles
+ Role name |                         Attributes                         | Member
+ of
+-----------+------------------------------------------------------------+-------
+----
+ postgres  | Superuser, Create role, Create DB, Replication, Bypass RLS | {}
+postgres=# CREATE USER repuser
+             REPLICATION
+             LOGIN
+             CONNECTION LIMIT 2
+             ENCRYPTED PASSWORD 'changeme';
+CREATE ROLE
+postgres=# \du+
+                                          List of roles
+ Role name |                         Attributes                         | Member of | Description
+-----------+------------------------------------------------------------+-----------+-------------
+ postgres  | Superuser, Create role, Create DB, Replication, Bypass RLS | {}        |
+ repuser   | Replication                                               +| {}        |
+           | 2 connections                                              |           |
 
 postgres=# exit
 ```
@@ -91,3 +115,12 @@ trigger_file = '/tmp/postgresql.trigger.5432'
 Step 10. Start the standby server.
 
 Step 11. Carefully monitor the replication delay until the catch-up period is over. During the initial catch-up period, the replication delay will be much higher than we would normally expect it to be.
+
+Eventually, you still find some errors.
+refer
+
+*  [Replication in PostgreSQL – Setting up Streaming](https://www.percona.com/blog/2018/09/07/setting-up-streaming-replication-postgresql)
+
+*  [PostgreSQL Streaming Replication - a Deep Dive](https://severalnines.com/database-blog/postgresql-streaming-replication-deep-dive)
+
+*  [Wiki](https://wiki.postgresql.org/wiki/Streaming_Replication)
