@@ -82,34 +82,41 @@ base          global            pg_commit_ts  pg_hba.conf  pg_logical     pg_not
 pg_basebackup: could not send replication command "CREATE_REPLICATION_SLOT "myslotname" PHYSICAL RESERVE_WAL": ERROR:  replication slot "myslotname" already exists
 pg_basebackup: removing data directory "/tmp/test4"
 -bash-4.2$ pg_basebackup  -d 'dbname=postgres' --wal-method=stream   --max-rate=30000   --write-recovery-conf  -D /tmp/test4
--bash-4.2$ ls /tmp/test4
-backup_label  current_logfiles  log           pg_dynshmem  pg_ident.conf  pg_multixact  pg_replslot  pg_snapshots  pg_stat_tmp  pg_tblspc    PG_VERSION  pg_xact               postgresql.conf
-base          global            pg_commit_ts  pg_hba.conf  pg_logical     pg_notify     pg_serial    pg_stat       pg_subtrans  pg_twophase  pg_wal      postgresql.auto.conf  recovery.conf
--bash-4.2$ cat /tmp/test4/recovery.conf
-standby_mode = 'on'
-primary_conninfo = 'user=postgres passfile=''/var/lib/pgsql/.pgpass'' port=5432 sslmode=prefer sslcompression=0 krbsrvname=postgres target_session_attrs=any'
--bash-4.2$
--bash-4.2$ pg_basebackup  -D test02 -h localhost --checkpoint=fast  --wal-method=stream -U repuser --write-recovery-conf
--bash-4.2$ ls test02
-backup_label  current_logfiles  log           pg_dynshmem  pg_ident.conf  pg_multixact  pg_replslot  pg_snapshots  pg_stat_tmp  pg_tblspc    PG_VERSION  pg_xact               postgresql.conf
-base          global            pg_commit_ts  pg_hba.conf  pg_logical     pg_notify     pg_serial    pg_stat       pg_subtrans  pg_twophase  pg_wal      postgresql.auto.conf  recovery.conf
--bash-4.2$ cat test02/recovery.conf 
-standby_mode = 'on'
-primary_conninfo = 'user=repuser passfile=''/var/lib/pgsql/.pgpass'' host=localhost port=5432 sslmode=prefer sslcompression=0 krbsrvname=postgres target_session_attrs=any'
--bash-4.2$ whoami
-postgres
--bash-4.2$ pg_basebackup  -D test03 -h localhost --checkpoint=fast  --wal-method=stream -U repuser --write-recovery-conf -F=t
-pg_basebackup: invalid output format "=t", must be "plain" or "tar"
--bash-4.2$ pg_basebackup  -D test03 -h localhost --checkpoint=fast  --wal-method=stream -U repuser --write-recovery-conf -F t
--bash-4.2$ ls test03
+-bash-4.2$ pg_basebackup  -D slave  --checkpoint=fast  --wal-method=stream -U repuser --write-recovery-conf -F t  -R   -h 100.100.100.101
+[root@node1 tmp]# ls slave/
 base.tar  pg_wal.tar
--bash-4.2$ pg_basebackup  -D test04 -h localhost --checkpoint=fast  --wal-method=stream -U repuser --write-recovery-conf -F p
--bash-4.2$ ls test04
-backup_label  current_logfiles  log           pg_dynshmem  pg_ident.conf  pg_multixact  pg_replslot  pg_snapshots  pg_stat_tmp  pg_tblspc    PG_VERSION  pg_xact               postgresql.conf
-base          global            pg_commit_ts  pg_hba.conf  pg_logical     pg_notify     pg_serial    pg_stat       pg_subtrans  pg_twophase  pg_wal      postgresql.auto.conf  recovery.conf
--bash-4.2$ 
-
+[root@node1 tmp]# cd slave/
+[root@node1 slave]# ls
+base.tar  pg_wal.tar
+[root@node1 slave]# scp *.tar 100.100.100.102:/var/lib/pgsql/11/data/
+The authenticity of host '100.100.100.102 (100.100.100.102)' can't be established.
+ECDSA key fingerprint is SHA256:2tISk9G3OnQbrtzEndowRqo6wCZnEHiEU/J7Mr3kOcQ.
+ECDSA key fingerprint is MD5:d6:9b:6e:cb:29:b0:83:6d:86:d2:30:ae:93:52:7d:db.
+Are you sure you want to continue connecting (yes/no)? yes 
+Warning: Permanently added '100.100.100.102' (ECDSA) to the list of known hosts.
+root@100.100.100.102's password: 
+base.tar                                                                                                                                                                                                                                                100%   24MB  46.3MB/s   00:00    
+pg_wal.tar    
 ```
+We connect the slave server, enter the folder ***/var/lib/pgsql/11/data***.
+
+```bash
+[root@node2 data]# tar -xvf  pg_wal.tar 
+[root@node2 data]# tar -xvf  base.tar 
+[root@node2 data]# rm -rf *.tar
+[root@node2 data]# chown -R postgres.postgres *
+[root@node2 data]# systemctl start  postgresql-11
+[root@node2 data]#  tail -n 60 -f /var/lib/pgsql/11/data/log/postgresql-Mon.log 
+2019-10-28 08:47:12.692 UTC [25725] LOG:  replication connection authorized: user=repuser
+2019-10-28 08:47:17.689 UTC [25730] LOG:  connection received: host=100.100.100.102 port=35458
+2019-10-28 08:47:17.691 UTC [25730] LOG:  replication connection authorized: user=repuser
+```
+* 一定要從master打包data過去slave，不然會有下面這種error:
+
+```bash
+database system identifier differs between the primary and standby
+```
+<img src='pic/master-slave.jpg'></img>
 #### Replaying the transaction log
 Here is a sample ***recovery.conf*** file about modification:
 
@@ -343,3 +350,38 @@ refer
 *  [PostgreSQL Streaming Replication - a Deep Dive](https://severalnines.com/database-blog/postgresql-streaming-replication-deep-dive)
 
 *  [Wiki](https://wiki.postgresql.org/wiki/Streaming_Replication)
+
+#### Often Probelme
+
+1.  Configuration files' privilege : postgresql.conf , pg_hba.conf ,recovery.conf must be  ***postgres*** ,not ***root*** .
+ex: chown -R postgres.postgres   /var/lib/pgsql/11/data
+
+2.  /var/lib/pgsql/11/data/pg_hba.conf contnet:
+
+```conf
+local  replication   all                trust 
+host   replication   all  127.0.0.1/32  trust  
+host   replication   all  ::1/128       trust  
+host   replication   all  0.0.0.0/0     trust  
+
+```
+
+3. remote access in /var/lib/pgsql/11/data/pg_hba.conf : 
+```conf
+host    all             all             0.0.0.0/0               md5
+```
+
+and We connect it :
+
+```bash
+[root@node1 data]# su - postgres
+Last login: Mon Oct 28 08:21:12 UTC 2019 on pts/0
+-bash-4.2$ psql
+psql (11.5)
+Type "help" for help.
+
+postgres=# \password
+Enter new password: 
+Enter it again: 
+postgres=# 
+```
