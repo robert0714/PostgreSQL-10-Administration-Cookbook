@@ -16,9 +16,11 @@ sudo yum install  -y  postgresql11-server
 sudo  /usr/pgsql-11/bin/postgresql-11-setup initdb
 
 
-sudo sh -c 'echo host all all     0.0.0.0/0  md5    >>  /var/lib/pgsql/11/data/pg_hba.conf'
-sudo sh -c 'echo host all replicator 0.0.0.0/0  md5  >>  /var/lib/pgsql/11/data/pg_hba.conf'
-sudo sh -c 'echo host replication repuser 0.0.0.1/0  md5  >>  /var/lib/pgsql/11/data/pg_hba.conf'
+sudo sh -c 'echo local  replication   all                trust  >>  /var/lib/pgsql/11/data/pg_hba.conf'
+sudo sh -c 'echo host   replication   all  127.0.0.1/32  trust  >>  /var/lib/pgsql/11/data/pg_hba.conf'
+sudo sh -c 'echo host   replication   all  ::1/128       trust  >>  /var/lib/pgsql/11/data/pg_hba.conf'
+sudo sh -c 'echo host   replication   all  0.0.0.0/0       trust  >>  /var/lib/pgsql/11/data/pg_hba.conf'
+# sudo sed -i 's/ChallengeResponseAuthentication no/ChallengeResponseAuthentication yes/g' /var/lib/pgsql/11/data/pg_hba.conf
 sudo sh -c "echo listen_addresses = \'*\'   >>  /var/lib/pgsql/11/data/postgresql.conf"
 sudo sh -c "echo max_wal_size = 20GB   >>  /var/lib/pgsql/11/data/postgresql.conf"
 sudo sh -c "echo checkpoint_timeout = 3600   >>  /var/lib/pgsql/11/data/postgresql.conf"

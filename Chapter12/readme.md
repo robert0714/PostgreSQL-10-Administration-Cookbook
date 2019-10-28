@@ -77,6 +77,15 @@ base          global            pg_commit_ts  pg_hba.conf  pg_logical     pg_not
 standby_mode = 'on'
 primary_conninfo = 'user=postgres passfile=''/var/lib/pgsql/.pgpass'' port=5432 sslmode=prefer sslcompression=0 krbsrvname=postgres target_session_attrs=any'
 -bash-4.2$
+-bash-4.2$ pg_basebackup  -D test02 -h localhost --checkpoint=fast  --wal-method=stream -U repuser --write-recovery-conf
+-bash-4.2$ ls test02
+backup_label  current_logfiles  log           pg_dynshmem  pg_ident.conf  pg_multixact  pg_replslot  pg_snapshots  pg_stat_tmp  pg_tblspc    PG_VERSION  pg_xact               postgresql.conf
+base          global            pg_commit_ts  pg_hba.conf  pg_logical     pg_notify     pg_serial    pg_stat       pg_subtrans  pg_twophase  pg_wal      postgresql.auto.conf  recovery.conf
+-bash-4.2$ cat test02/recovery.conf 
+standby_mode = 'on'
+primary_conninfo = 'user=repuser passfile=''/var/lib/pgsql/.pgpass'' host=localhost port=5432 sslmode=prefer sslcompression=0 krbsrvname=postgres target_session_attrs=any'
+-bash-4.2$ whoami
+postgres
 ```
 
 ### Without an additional archive (method-2)
