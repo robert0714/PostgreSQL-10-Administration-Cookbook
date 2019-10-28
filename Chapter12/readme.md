@@ -117,6 +117,26 @@ We connect the slave server, enter the folder ***/var/lib/pgsql/11/data***.
 database system identifier differs between the primary and standby
 ```
 <img src='pic/master-slave.jpg'></img>
+
+#### Checking  services 
+After running the pg_basebackup command, the services can be already started. The first thing we should check is whether the master shows a WAL sender process :
+
+```bash
+[root@node1 slave]# ps ax | grep sender
+26404 ?        Ss     0:00 postgres: walsender repuser 100.100.100.102(35498) streaming 0/1002AC10
+32082 pts/0    R+     0:00 grep --color=auto sender
+```
+
+If it does, the slave will also carry a WAL receiver process :
+
+```bash
+-bash-4.2$ ps ax | grep  receiver
+20383 ?        Ss     0:04 postgres: walreceiver   streaming 0/1002AC10
+20466 pts/0    R+     0:00 grep --color=auto receiver
+```
+
+If those processes are there, we are already on the right track, and replication is working as expected. Both sides are now talking to each other and WAL flows from the master to the slave.
+
 #### Replaying the transaction log
 Here is a sample ***recovery.conf*** file about modification:
 
