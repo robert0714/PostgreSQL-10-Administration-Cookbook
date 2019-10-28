@@ -28,9 +28,10 @@ sudo sh -c "echo log_connections = on   >>  /var/lib/pgsql/11/data/postgresql.co
 sudo sh -c "echo max_wal_senders = 2    >>  /var/lib/pgsql/11/data/postgresql.conf"
 sudo sh -c "echo wal_level = \'archive\'   >>  /var/lib/pgsql/11/data/postgresql.conf"
 sudo sh -c "echo archive_mode = on    >>  /var/lib/pgsql/11/data/postgresql.conf"
-sudo sh -c "echo archive_command = \'cd .\'    >>  /var/lib/pgsql/11/data/postgresql.conf"
+sudo sh -c "echo archive_command = \'cp %p /archive/%f\'    >>  /var/lib/pgsql/11/data/postgresql.conf"
  
 sudo systemctl enable postgresql-11.service
 sudo systemctl start postgresql-11.service
 
-
+sudo mkdir /archive
+sudo chown postgres.postgres /archive
