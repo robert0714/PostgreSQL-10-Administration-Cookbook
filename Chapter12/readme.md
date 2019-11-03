@@ -345,6 +345,20 @@ rsync -cva --inplace --exclude=*pg_wal* \
 ${PGDATA}/ $STANDBYNODE:$PGDATA
 ```
 
+I tried the below script:
+
+```bash
+[root@node1 tmp]# rsync -avzh --progress --exclude=*pg_wal*  /tmp/slave  100.100.100.102:/tmp
+root@100.100.100.102's password:
+sending incremental file list
+slave/
+slave/base.tar
+         25.24M 100%   20.85MB/s    0:00:01 (xfr#1, to-chk=0/2)
+
+sent 2.93M bytes  received 39 bytes  651.45K bytes/sec
+total size is 25.24M  speedup is 8.61
+```
+
 step 8 Stop the backup
 
 ```bash
