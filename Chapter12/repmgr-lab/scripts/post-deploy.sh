@@ -20,13 +20,13 @@ sudo  /usr/pgsql-11/bin/postgresql-11-setup initdb
 # install REPMGR
 curl https://dl.2ndquadrant.com/default/release/get/11/rpm | sudo bash
 sudo yum repolist
-sudo yum install repmgr11
+sudo yum install -y repmgr11
 
 # process SSH
 
 # 1) [ON ALL SERVERS] Become the Postgres user, create the ssh key, then cat out the public key:
-su - postgres -c 'mkdir -p ~/.ssh'
-su - postgres -c 'ssh-keygen  -b 2048 -t rsa   -q -N \"\"  '
+#su - postgres -c 'mkdir -p ~/.ssh'
+su - postgres -c 'ssh-keygen  -b 2048 -t rsa -f ~/.ssh/id_rsa  -q  -P \"123456\" '
 su - postgres -c 'cat ~/.ssh/id_rsa.pub'
 
 # 2) [ON ALL SERVERS] Create an authorized keys file and set the permissions:
@@ -71,7 +71,8 @@ su - postgres -c 'vi ~/.ssh/authorized_keys'
 
 #3) [ON ALL SERVERS] I created the log file that I configured in Step 2 so I would not get an error when starting the service:
 
-su - postgres -c 'touch /var/log/repmgr.log'
+sudo touch /var/log/repmgr.log
+sudo chown postgres.postgres /var/log/repmgr.log 
 
 
 sudo sh -c 'echo local      replication     all                       trust  >>  /var/lib/pgsql/11/data/pg_hba.conf'
@@ -94,12 +95,73 @@ sudo sh -c "echo max_wal_senders = 10    >>  /var/lib/pgsql/11/data/postgresql.c
 sudo sh -c "echo hot_standby = on   >>  /var/lib/pgsql/11/data/postgresql.conf"
 sudo sh -c "echo archive_command = \'cp %p /archive/%f\'    >>  /var/lib/pgsql/11/data/postgresql.conf"
  
-su - postgres -c 'mkdir /var/lib/pgsql/10/data/archive'
+su - postgres -c 'mkdir /var/lib/pgsql/11/data/archive'
 sudo mkdir /archive
 sudo chown postgres.postgres /archive
+
+if [ "$HOSTNAME" = "base-centos-1" ]; then
+    echo "success"
+else
+    echo "failure"
+fi
+for i in {1..4};
+do
+   if [ "$HOSTNAME" = "base-centos-$i" ]; then
+       sudo cp /vagrant/conf/base-$i-repmgr.conf  /etc/repmgr/11/repmgr.conf
+   fi
+done
 
 sudo systemctl enable postgresql-11.service
 sudo systemctl restart postgresql-11.service
 sudo systemctl status postgresql-11.service
 
 
+case $HOSTNAME in
+  (base-centos-1) echo "this is base-centos-1-part-1!";;
+  (base-centos-1) echo "this is base-centos-1-part-2!";;
+  (base-centos-1) echo "this is base-centos-1-part-3!";;
+  (base-centos-1) echo "this is base-centos-1-part-4!";;
+  (base-centos-1) echo "this is base-centos-1-part-5!";;
+  (base-centos-1) echo "this is base-centos-1-part-6!";;
+  (base-centos-1) echo "this is base-centos-1-part-7!";;
+  (bar) echo "Oops, bar? Are you kidding?";;
+  (*)   echo "How did I get in the middle of nowhere?";;
+esac
+
+
+for i in {1..4};
+do
+    if [ "$HOSTNAME" = "base-centos-1" ]; then
+       su - postgres -c 'repmgr primary register'
+       su - postgres -c 'repmgr daemon start'
+       su - postgres -c 'repmgr daemon status'
+    elif [ "$HOSTNAME" = "base-centos-2"  ]
+    then
+       sudo systemctl stop postgresql-11.service 
+       sudo rm -rf /var/lib/pgsql/11/data/*
+       su - postgres -c "repmgr -h base-centos-1 -U repmgr -d repmgr standby clone"
+       sudo systemctl start postgresql-11.service
+       sudo systemctl status postgresql-11.service
+       su - postgres -c 'repmgr standby register -h base-centos-1 -U repmgr'
+       su - postgres -c 'repmgr daemon start'
+       su - postgres -c 'repmgr daemon status'
+    elif [ "$HOSTNAME" = "base-centos-3"  ]
+    then
+       sudo systemctl stop postgresql-11.service 
+       sudo rm -rf /var/lib/pgsql/11/data/*
+       su - postgres -c "repmgr -h base-centos-1 -U repmgr -d repmgr standby clone"
+       sudo systemctl start postgresql-11.service
+       sudo systemctl status postgresql-11.service
+       su - postgres -c 'repmgr standby register -h base-centos-1 -U repmgr'
+       su - postgres -c 'repmgr daemon start'
+       su - postgres -c 'repmgr daemon status'
+    elif [ "$HOSTNAME" = "base-centos-4"  ]
+    then
+        su - postgres -c 'createuser --replication --createdb --createrole --superuser repmgr'
+        su - postgres -c "psql -c 'ALTER USER repmgr SET search_path TO repmgr, \"\$user\", public;'"
+        su - postgres -c 'createdb repmgr --owner=repmgr'
+        su - postgres -c 'repmgr witness register -h base-centos-1 -U repmgr'
+        su - postgres -c 'repmgr daemon start'
+        su - postgres -c 'repmgr daemon status'
+    fi
+done
