@@ -17,27 +17,6 @@ sudo rpm -Uvh https://yum.postgresql.org/11/redhat/rhel-7-x86_64/pgdg-redhat-rep
 sudo yum install  -y  postgresql11-server
 sudo  /usr/pgsql-11/bin/postgresql-11-setup initdb
 
-
-sudo sh -c 'echo local  replication   all                trust  >>  /var/lib/pgsql/11/data/pg_hba.conf'
-sudo sh -c 'echo host   replication   all  127.0.0.1/32  trust  >>  /var/lib/pgsql/11/data/pg_hba.conf'
-sudo sh -c 'echo host   replication   all  ::1/128       trust  >>  /var/lib/pgsql/11/data/pg_hba.conf'
-sudo sh -c 'echo host   replication   all  0.0.0.0/0       trust  >>  /var/lib/pgsql/11/data/pg_hba.conf'
-# sudo sed -i 's/ChallengeResponseAuthentication no/ChallengeResponseAuthentication yes/g' /var/lib/pgsql/11/data/pg_hba.conf
-sudo sh -c "echo listen_addresses = \'*\'   >>  /var/lib/pgsql/11/data/postgresql.conf"
-sudo sh -c "echo max_wal_size = 20GB   >>  /var/lib/pgsql/11/data/postgresql.conf"
-sudo sh -c "echo checkpoint_timeout = 3600   >>  /var/lib/pgsql/11/data/postgresql.conf"
-sudo sh -c "echo log_connections = on   >>  /var/lib/pgsql/11/data/postgresql.conf"
-sudo sh -c "echo max_wal_senders = 10    >>  /var/lib/pgsql/11/data/postgresql.conf"
-sudo sh -c "echo wal_level = \'archive\'   >>  /var/lib/pgsql/11/data/postgresql.conf"
-sudo sh -c "echo archive_mode = on    >>  /var/lib/pgsql/11/data/postgresql.conf"
-sudo sh -c "echo archive_command = \'cp %p /archive/%f\'    >>  /var/lib/pgsql/11/data/postgresql.conf"
- 
-sudo systemctl enable postgresql-11.service
-sudo systemctl start postgresql-11.service
-
-sudo mkdir /archive
-sudo chown postgres.postgres /archive
-
 # install REPMGR
 curl https://dl.2ndquadrant.com/default/release/get/11/rpm | sudo bash
 sudo yum repolist
@@ -46,8 +25,8 @@ sudo yum install repmgr11
 # process SSH
 
 # 1) [ON ALL SERVERS] Become the Postgres user, create the ssh key, then cat out the public key:
-
-su - postgres -c 'ssh-keygen'
+su - postgres -c 'mkdir -p ~/.ssh'
+su - postgres -c 'ssh-keygen  -b 2048 -t rsa   -q -N \"\"  '
 su - postgres -c 'cat ~/.ssh/id_rsa.pub'
 
 # 2) [ON ALL SERVERS] Create an authorized keys file and set the permissions:
@@ -93,3 +72,34 @@ su - postgres -c 'vi ~/.ssh/authorized_keys'
 #3) [ON ALL SERVERS] I created the log file that I configured in Step 2 so I would not get an error when starting the service:
 
 su - postgres -c 'touch /var/log/repmgr.log'
+
+
+sudo sh -c 'echo local      replication     all                       trust  >>  /var/lib/pgsql/11/data/pg_hba.conf'
+sudo sh -c 'echo host       replication     all  127.0.0.1/32         trust  >>  /var/lib/pgsql/11/data/pg_hba.conf'
+sudo sh -c 'echo host       replication     all  ::1/128              trust  >>  /var/lib/pgsql/11/data/pg_hba.conf'
+sudo sh -c 'echo host       replication     all  19.16.56.101/32      trust  >>  /var/lib/pgsql/11/data/pg_hba.conf'
+sudo sh -c 'echo host       replication     all  19.16.56.102/32      trust  >>  /var/lib/pgsql/11/data/pg_hba.conf'
+sudo sh -c 'echo host       replication     all  19.16.56.103/32      trust  >>  /var/lib/pgsql/11/data/pg_hba.conf'
+sudo sh -c 'echo host       replication     all  19.16.56.104/32      trust  >>  /var/lib/pgsql/11/data/pg_hba.conf'
+sudo sh -c 'echo host       repmgr          all  19.16.56.101/32      trust  >>  /var/lib/pgsql/11/data/pg_hba.conf'
+sudo sh -c 'echo host       repmgr          all  19.16.56.102/32      trust  >>  /var/lib/pgsql/11/data/pg_hba.conf'
+sudo sh -c 'echo host       repmgr          all  19.16.56.103/32      trust  >>  /var/lib/pgsql/11/data/pg_hba.conf'
+sudo sh -c 'echo host       repmgr          all  19.16.56.104/32      trust  >>  /var/lib/pgsql/11/data/pg_hba.conf'
+# sudo sed -i 's/ChallengeResponseAuthentication no/ChallengeResponseAuthentication yes/g' /var/lib/pgsql/11/data/pg_hba.conf
+sudo sh -c "echo listen_addresses = \'*\'   >>  /var/lib/pgsql/11/data/postgresql.conf"
+sudo sh -c "echo shared_preload_libraries = \'repmgr\'   >>  /var/lib/pgsql/11/data/postgresql.conf"
+sudo sh -c "echo wal_level = \'replica\'   >>  /var/lib/pgsql/11/data/postgresql.conf"
+sudo sh -c "echo archive_mode = on    >>  /var/lib/pgsql/11/data/postgresql.conf"
+sudo sh -c "echo max_wal_senders = 10    >>  /var/lib/pgsql/11/data/postgresql.conf"
+sudo sh -c "echo hot_standby = on   >>  /var/lib/pgsql/11/data/postgresql.conf"
+sudo sh -c "echo archive_command = \'cp %p /archive/%f\'    >>  /var/lib/pgsql/11/data/postgresql.conf"
+ 
+su - postgres -c 'mkdir /var/lib/pgsql/10/data/archive'
+sudo mkdir /archive
+sudo chown postgres.postgres /archive
+
+sudo systemctl enable postgresql-11.service
+sudo systemctl restart postgresql-11.service
+sudo systemctl status postgresql-11.service
+
+
