@@ -26,15 +26,20 @@ sudo yum install -y repmgr11
 
 # 1) [ON ALL SERVERS] Become the Postgres user, create the ssh key, then cat out the public key:
 #su - postgres -c 'mkdir -p ~/.ssh'
- 
-su - postgres -c 'ssh-keygen   -t rsa -f ~/.ssh/id_rsa  -q  -P \"123456\" '
+
+su - postgres -c 'ssh-keygen  -f ~/.ssh/id_rsa  -q   '
+#su - postgres -c 'ssh-keygen   -t rsa -f ~/.ssh/id_rsa  -q  -P \"123456\" '
 su - postgres -c 'cat ~/.ssh/id_rsa.pub'
+su - postgres -c   "printf 'NoHostAuthenticationForLocalhost yes
+ Host *  
+    StrictHostKeyChecking no' > ~/.ssh/config"
 
 # 2) [ON ALL SERVERS] Create an authorized keys file and set the permissions:
 
-su - postgres -c 'touch ~/.ssh/authorized_keys'
-su - postgres -c 'chmod 600 ~/.ssh/authorized_keys'
-su - postgres -c 'vi ~/.ssh/authorized_keys'
+#su - postgres -c 'touch ~/.ssh/authorized_keys'
+#su - postgres -c 'chmod 600 ~/.ssh/authorized_keys'
+#su - postgres -c 'vi ~/.ssh/authorized_keys'
+sudo echo "postgres:123" |chpasswd
 
 # 3) [ON ALL SERVERS] Place all of the public keys from Step 1 into the authorized_keys files created in Step 2.  The authorized_keys file contents looked like the following on all of my servers, with each key as a new line:
 

@@ -419,3 +419,90 @@ Enter new password:
 Enter it again: 
 postgres=# 
 ```
+
+## Using repmgr
+
+Please use repmgr-lab.And then We would test **node rejoin , standby switchover, standby promote, standby follow, cluster show , cluster cleanup** :
+
+5. To switch from one primary to another one, run this command on the **standby** that you want to make a primary:
+
+```bash
+-bash-4.2$ repmgr standby switchover
+NOTICE: executing switchover on node "base-centos-2" (ID: 102)
+WARNING: unable to connect to remote host "base-centos-1" via SSH
+ERROR: unable to connect via SSH to host "base-centos-1", user ""
+-bash-4.2$ 
+```
+
+So you need type **ssh-copy-id base-centos-1,ssh-copy-id base-centos-2,ssh-copy-id base-centos-3,ssh-copy-id base-centos-4**
+
+```bash
+-bash-4.2$ source ~/.bashrc
+-bash-4.2$ repmgr standby switchover
+NOTICE: executing switchover on node "base-centos-2" (ID: 102)
+NOTICE: local node "base-centos-2" (ID: 102) will be promoted to primary; current primary "base-centos-1" (ID: 101) will be demoted to standby
+NOTICE: stopping current primary node "base-centos-1" (ID: 101)
+NOTICE: issuing CHECKPOINT
+DETAIL: executing server command "pg_ctl  -D '/var/lib/pgsql/11/data' -W -m fast stop"
+INFO: checking for primary shutdown; 1 of 60 attempts ("shutdown_check_timeout")
+INFO: checking for primary shutdown; 2 of 60 attempts ("shutdown_check_timeout")
+NOTICE: current primary has been cleanly shut down at location 0/4000028
+NOTICE: waiting up to 30 seconds (parameter "wal_receive_check_timeout") for received WAL to flush to disk
+INFO: sleeping 1 of maximum 30 seconds waiting for standby to flush received WAL to disk
+(ommit...)
+INFO: sleeping 30 of maximum 30 seconds waiting for standby to flush received WAL to disk
+WARNING: local node "base-centos-2" is behind shutdown primary "base-centos-1"
+DETAIL: local node last receive LSN is 0/31E0000, primary shutdown checkpoint LSN is 0/4000028
+NOTICE: aborting switchover
+HINT: use --always-promote to force promotion of standby
+-bash-4.2$ 
+```
+
+
+6. To promote a  **standby**  to be the new primary, use the following command:
+
+```bash
+-bash-4.2$ repmgr standby promote
+ERROR: this replication cluster already has an active primary server
+DETAIL: current primary is "base-centos-1" (ID: 101)
+
+```
+So you need type **ssh-copy-id base-centos-1,ssh-copy-id base-centos-2,ssh-copy-id base-centos-3,ssh-copy-id base-centos-4**
+
+```bash
+-bash-4.2$ repmgr standby  promote
+NOTICE: promoting standby to primary
+DETAIL: promoting server "base-centos-2" (ID: 102) using "pg_ctl  -w -D '/var/lib/pgsql/11/data' promote"
+waiting for server to promote.... done
+server promoted
+NOTICE: waiting up to 60 seconds (parameter "promote_check_timeout") for promotion to complete
+NOTICE: STANDBY PROMOTE successful
+DETAIL: server "base-centos-2" (ID: 102) was successfully promoted to primary
+-bash-4.2$ repmgr daemon status
+ ID | Name          | Role    | Status    | Upstream | repmgrd | PID   | Paused? | Upstream last seen
+----+---------------+---------+-----------+----------+---------+-------+---------+--------------------
+ 101 | base-centos-1 | primary | - failed  |          | n/a     | n/a   | n/a     | n/a                
+ 102 | base-centos-2 | primary | * running |          | running | 14142 | yes     | n/a                
+
+WARNING: following issues were detected
+  - unable to  connect to node "base-centos-1" (ID: 101)
+```
+
+7. To request a   **standby**   to follow a new primary, use the following command:
+
+```bash
+```
+
+
+8. Check the status of each registered node in the cluster, like this:
+
+```bash
+```
+
+
+9. Request a cleanup of monitoring data, as follows. This is relevant only if **--monitoring-history** is used:
+
+```bash
+```
+
+
