@@ -17,10 +17,15 @@ sudo rpm -Uvh https://yum.postgresql.org/11/redhat/rhel-7-x86_64/pgdg-redhat-rep
 sudo yum install  -y  postgresql11-server
 sudo  /usr/pgsql-11/bin/postgresql-11-setup initdb
 
+
+sudo yum install -y epel-release
+sudo yum install -y   sshpass
+
 # install REPMGR
 curl https://dl.2ndquadrant.com/default/release/get/11/rpm | sudo bash
 sudo yum repolist
-sudo yum install -y repmgr11
+sudo yum install -y repmgr11 sshpass
+ 
 
 # process SSH
 
@@ -146,6 +151,10 @@ su - postgres -c 'echo export PATH=\$PATH:\$PG_BINDIR >>  ~/.bashrc'
         su - postgres -c 'source ~/.bashrc;repmgr primary register'
         su - postgres -c 'source ~/.bashrc;repmgr daemon start'
         su - postgres -c 'source ~/.bashrc;repmgr daemon status'
+        for i in {1..1};
+        do
+           su - postgres -c "sshpass -p 123  ssh-copy-id base-centos-$i"
+        done
     elif [ "$HOSTNAME" = "base-centos-2"  ]
     then
        sudo systemctl stop postgresql-11.service 
@@ -156,6 +165,10 @@ su - postgres -c 'echo export PATH=\$PATH:\$PG_BINDIR >>  ~/.bashrc'
        su - postgres -c 'source ~/.bashrc;repmgr standby register -h base-centos-1 -U repmgr'
        su - postgres -c 'source ~/.bashrc;repmgr daemon start'
        su - postgres -c 'source ~/.bashrc;repmgr daemon status'
+        for i in {1..2};
+        do
+            su - postgres -c "sshpass -p 123  ssh-copy-id base-centos-$i"
+        done
     elif [ "$HOSTNAME" = "base-centos-3"  ]
     then
        sudo systemctl stop postgresql-11.service 
@@ -166,6 +179,10 @@ su - postgres -c 'echo export PATH=\$PATH:\$PG_BINDIR >>  ~/.bashrc'
        su - postgres -c 'source ~/.bashrc;repmgr standby register -h base-centos-1 -U repmgr'
        su - postgres -c 'source ~/.bashrc;repmgr daemon start'
        su - postgres -c 'source ~/.bashrc;repmgr daemon status'
+        for i in {1..3};
+        do
+            su - postgres -c "sshpass -p 123  ssh-copy-id base-centos-$i"
+        done
     elif [ "$HOSTNAME" = "base-centos-4"  ]
     then
         su - postgres -c 'createuser --replication --createdb --createrole --superuser repmgr'
@@ -174,4 +191,8 @@ su - postgres -c 'echo export PATH=\$PATH:\$PG_BINDIR >>  ~/.bashrc'
         su - postgres -c 'source ~/.bashrc;repmgr witness register -h base-centos-1 -U repmgr'
         su - postgres -c 'source ~/.bashrc;repmgr daemon start'
         su - postgres -c 'source ~/.bashrc;repmgr daemon status'
+        for i in {1..4};
+        do
+            su - postgres -c "sshpass -p 123  ssh-copy-id base-centos-$i"
+        done
     fi

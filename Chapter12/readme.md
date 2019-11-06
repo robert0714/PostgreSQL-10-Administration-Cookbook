@@ -487,22 +487,100 @@ DETAIL: server "base-centos-2" (ID: 102) was successfully promoted to primary
 WARNING: following issues were detected
   - unable to  connect to node "base-centos-1" (ID: 101)
 ```
+You can see the status of  original primary server "base-centos-1"  is **failed** .
+
+
+solution (1) :  In according to official documents ,we can use the script :
+
+```bash
+-bash-4.2$ repmgr standby switchover  --siblings-follow --dry-run
+```
+
+
+solution (2) :
+
+```bash
+-bash-4.2$ pg_ctl  -D '/var/lib/pgsql/11/data' -W -m fast stop
+-bash-4.2$ rm -rf  /var/lib/pgsql/11/data/*
+-bash-4.2$ repmgr -h base-centos-2 -U repmgr -d repmgr standby clone
+WARNING: following problems with command line parameters detected:
+  "config_directory" set in repmgr.conf, but --copy-external-config-files not provided
+NOTICE: destination directory "/var/lib/pgsql/11/data" provided
+INFO: connecting to source node
+DETAIL: connection string is: host=base-centos-2 user=repmgr dbname=repmgr
+DETAIL: current installation size is 31 MB
+NOTICE: checking for available walsenders on the source node (2 required)
+NOTICE: checking replication connections can be made to the source server (2 required)
+INFO: checking and correcting permissions on existing directory "/var/lib/pgsql/11/data"
+NOTICE: starting backup (using pg_basebackup)...
+HINT: this may take some time; consider using the -c/--fast-checkpoint option
+INFO: executing:
+  pg_basebackup -l "repmgr base backup"  -D /var/lib/pgsql/11/data -h base-centos-2 -p 5432 -U repmgr -X stream 
+NOTICE: standby clone (using pg_basebackup) complete
+NOTICE: you can now start your PostgreSQL server
+HINT: for example: pg_ctl -D /var/lib/pgsql/11/data start
+HINT: after starting the server, you need to re-register this standby with "repmgr standby register --force" to update the existing node record
+-bash-4.2$ pg_ctl  -D '/var/lib/pgsql/11/data' -W -m fast start
+server starting
+-bash-4.2$ 2019-11-06 07:42:16.220 UTC [16402] LOG:  could not bind IPv4 address "0.0.0.0": Address already in use
+2019-11-06 07:42:16.220 UTC [16402] HINT:  Is another postmaster already running on port 5432? If not, wait a few seconds and retry.
+2019-11-06 07:42:16.221 UTC [16402] LOG:  could not bind IPv6 address "::": Address already in use
+2019-11-06 07:42:16.221 UTC [16402] HINT:  Is another postmaster already running on port 5432? If not, wait a few seconds and retry.
+2019-11-06 07:42:16.221 UTC [16402] WARNING:  could not create listen socket for "*"
+2019-11-06 07:42:16.221 UTC [16402] FATAL:  could not create any TCP/IP sockets
+2019-11-06 07:42:16.221 UTC [16402] LOG:  database system is shut down
+[vagrant@base-centos-1 ~]$ sudo -s
+[root@base-centos-1 vagrant]# systemctl start postgresql-11
+[root@base-centos-1 vagrant]# exit
+exit
+
+
+```
+
 
 7. To request a   **standby**   to follow a new primary, use the following command:
 
 ```bash
+vagrant@base-centos-3 ~]
+-bash-4.2$ repmgr standby  follow
 ```
-
 
 8. Check the status of each registered node in the cluster, like this:
 
 ```bash
+repmgr cluster show
 ```
-
 
 9. Request a cleanup of monitoring data, as follows. This is relevant only if **--monitoring-history** is used:
 
 ```bash
+repmgr cluster cleanup
 ```
 
+If you would like the daemon to generate monitoring information for that node, you should set **monitoring_history=yes** in the **repmgr.conf** file.
+Monitoring data can be accessed using this:
 
+```bash
+-bash-4.2$  source ~/.bashrc;repmgr daemon status
+ ID | Name          | Role    | Status    | Upstream      | repmgrd | PID   | Paused? | Upstream last seen
+----+---------------+---------+-----------+---------------+---------+-------+---------+--------------------
+ 101 | base-centos-1 | standby |   running |               | running | 14223 | no      | 1 second(s) ago    
+ 102 | base-centos-2 | primary | * running |               | running | 14221 | no      | n/a                
+ 103 | base-centos-3 | standby |   running | base-centos-2 | running | 14227 | no      | 0 second(s) ago    
+ 104 | base-centos-4 | witness | * running | base-centos-2 | running | 14227 | no      | 0 second(s) ago    
+-bash-4.2$ psql
+psql (11.5)
+Type "help" for help.
+
+postgres=# \c repmgr
+You are now connected to database "repmgr" as user "postgres".
+repmgr=# select * from repmgr.replication_status;
+ primary_node_id | standby_node_id | standby_name  | node_type | active |       last_monitor_time       | last_wal_primary_location | last_wal_standby_location | replication_lag | replication_time_lag | apply_lag | communication_time_lag 
+-----------------+-----------------+---------------+-----------+--------+-------------------------------+---------------------------+---------------------------+-----------------+----------------------+-----------+------------------------
+             102 |             103 | base-centos-3 | standby   | t      | 2019-11-06 08:27:11.086391+00 | 0/800DC68                 | 0/800DC68                 | 0 bytes         | 00:00:00             | 0 bytes   | 00:00:01.458517
+             102 |             101 | base-centos-1 | standby   | t      | 2019-11-06 08:27:10.177893+00 | 0/800DB50                 | 0/800DB50                 | 0 bytes         | 00:00:00             | 0 bytes   | 00:00:01.458517
+             101 |             102 | base-centos-2 | primary   | t      | 2019-11-06 08:20:57.643482+00 |                           | 0/502DDD0                 |                 |                      |           | 00:00:01.458517
+(3 rows)
+
+repmgr=#
+```
