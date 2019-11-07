@@ -584,3 +584,47 @@ repmgr=# select * from repmgr.replication_status;
 
 repmgr=#
 ```
+
+## Logical replication
+The main benefits of logical replication are as follows:
+*  Performance is roughly two times better than that of the best trigger-based mechanisms
+*  Selective replication is supported, so we don't need to replicate the entire database (only available with pglogical at present)
+*  Replication can occur between different major releases, which can allow a zero-downtime upgrade
+
+PostgreSQL 10 contains native logical replication between servers for PostgreSQL 10 and above. Another option is the more flexible pglogical utility, which can send and receive data from PostgreSQL 9.4 and above( https://2ndquadrant.com/en/resources/pglogical/ ).
+
+pglogical 2.2.2 allows you to perform the following actions:
+*  Full database replication
+*  Selective replication of subsets of tables using replication sets
+*  Selective replication of table rows at either the publisher or subscriber side
+*  Upgrades between major versions (see later recipe)
+*  Data forwarding to Postgres-XL or Postgres-BDR
+
+### Configuration
+See the documents of official site:
+
+https://github.com/2ndQuadrant/pglogical
+
+## Bidirectional replication(Postgres-BDR)
+
+Postgres-BDR builds upon the basic technology of logical replication, enhancing it in various ways. We refer heavily to the previous recipe, Logical replication.
+
+Postgres-BDR 1 requires a modified version of PostgreSQL 9.4. Postgres-BDR 2 is available only as an interim measure as an extension for PostgreSQL 9.6. Postgres-BDR 3 is available as an extension for PostgreSQL 10 and 11. For the latest info, please consult https://www.2ndquadrant.com/en/resources/bdr/ .
+
+Future versions of PostgreSQL may contain multi-master replication, though this will not be until at least PostgreSQL 13 as we go to press.
+
+The BDR experts at 2ndQuadrant will help you evaluate the best deployment option based on your business needs, among the following options:
+
+*  **Postgres Cloud Manager (PCM)**. PCM offers a quick and easy deployment of highly available BDR clusters using Trusted Postgres Architecture (TPA) from 2ndQuadrant. PCM is available for deployment on the Cloud – both public and private.
+
+*  **Docker Images**. This option provides a flexible and quick deployment model for Postgres-BDR clusters. Docker images manage to reduce deployment times significantly, allowing you to create containers without external runtime requirements. It gives you the possibility of creating a personalized architecture with minimal configuration.
+
+*  **Binary Repository**. Postgres-BDR is available for deployment via 2ndQuadrant’s yum & apt repositories – designed and maintained for production use. The binaries, in the form of RPMs and DEBs respectively, can be installed using the native package managers of the operating system of your choice. This provides a stable and reliable access to the software, on-premise and in the Cloud.
+
+
+ 2ndQuadrant’s PostgreSQL Solution for Single Master with High Availability addresses exactly that requirement, and is based on years of experience fulfilling enterprise needs. The architecture relies on best practices and provides high levels of reliability for production use.
+ 
+ <img src="pic/2ndQuadrant_PostgreSQL_Solution.png" />
+
+ Reference: https://www.2ndquadrant.com/en/resources/highly-available-postgresql-clusters/
+
