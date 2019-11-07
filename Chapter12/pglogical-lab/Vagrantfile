@@ -1,0 +1,30 @@
+# -*- mode: ruby -*-
+# vi: set ft=ruby :
+Vagrant.configure(2) do |config|
+  if (/cygwin|mswin|mingw|bccwin|wince|emx/ =~ RUBY_PLATFORM) != nil
+    config.vm.synced_folder ".", "/vagrant", mount_options: ["dmode=700,fmode=600"]
+  else
+    config.vm.synced_folder ".", "/vagrant"
+  end
+  (1..2).each do |i|
+    config.vm.define "node#{i}" do |d|
+      d.vm.box = "bento/centos-7.6"
+      d.vm.hostname = "node#{i}"
+      d.vm.network "private_network", ip: "100.100.110.10#{i}" 
+      d.vm.provision "shell", inline: <<-SHELL
+        sudo   rpm -Uvh https://yum.postgresql.org/11/redhat/rhel-7-x86_64/pgdg-redhat-repo-latest.noarch.rpm
+        sudo   yum install  -y  postgresql11-server        
+      SHELL
+      d.vm.provision :shell, path: "scripts/post-deploy.sh"
+      d.vm.provider "virtualbox" do |v|
+        v.memory = 2048
+        v.cpus = 1
+      end 
+    end
+  end
+  if Vagrant.has_plugin?("vagrant-vbguest")
+    config.vbguest.auto_update = false
+    config.vbguest.no_install = true
+    config.vbguest.no_remote = true
+  end
+end 
