@@ -3,7 +3,7 @@ version: '3.7'
 services: 
   omnidb:
     container_name: omnidb
-    image: taivokasper/omnidb
+    image: robert0714/omnidb:v2.16.0-alpine_3.10.3
     privileged: true
     user: root
     volumes:

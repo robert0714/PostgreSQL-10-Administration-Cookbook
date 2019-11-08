@@ -1,6 +1,14 @@
-
 #!/bin/bash
 # centos 7.6
+
+# Edit the following to change the name of the database user that will be created:
+APP_DB_USER=omnidb
+APP_DB_PASS=omnidb
+
+# Edit the following to change the name of the database that is created (defaults to the user name)
+APP_DB_NAME=omnidb_tests
+
+
 value=$( grep -ic "entry" /etc/hosts )
 if [ $value -eq 0 ]
 then
@@ -37,9 +45,9 @@ sudo  /usr/pgsql-11/bin/postgresql-11-setup initdb
 sudo sh -c 'echo local      replication     all                             trust  >>  /var/lib/pgsql/11/data/pg_hba.conf'
 sudo sh -c 'echo host       replication     all     127.0.0.1/32            trust  >>  /var/lib/pgsql/11/data/pg_hba.conf'
 sudo sh -c 'echo host       replication     all     ::1/128                 trust  >>  /var/lib/pgsql/11/data/pg_hba.conf'
-sudo sh -c 'echo host       replication     all     100.100.110.101/32      trust  >>  /var/lib/pgsql/11/data/pg_hba.conf'
-sudo sh -c 'echo host       replication     all     100.100.110.102/32      trust  >>  /var/lib/pgsql/11/data/pg_hba.conf'
-
+sudo sh -c 'echo host       replication     all     100.100.110.101/24      trust  >>  /var/lib/pgsql/11/data/pg_hba.conf'
+sudo sh -c 'echo host       replication     all     100.100.110.102/24      trust  >>  /var/lib/pgsql/11/data/pg_hba.conf'
+sudo sh -c 'echo host       all             all     all                     md5    >>  /var/lib/pgsql/11/data/pg_hba.conf'
 
 # sudo sed -i 's/ChallengeResponseAuthentication no/ChallengeResponseAuthentication yes/g' /var/lib/pgsql/11/data/pg_hba.conf
 sudo sh -c "echo listen_addresses = \'*\'   >>  /var/lib/pgsql/11/data/postgresql.conf"
@@ -61,3 +69,15 @@ sudo systemctl start postgresql-11.service
 
 sudo mkdir /archive
 sudo chown postgres.postgres /archive
+
+cat << EOF | su - postgres -c psql
+-- Create the database user:
+CREATE USER $APP_DB_USER WITH PASSWORD '$APP_DB_PASS' SUPERUSER;
+
+-- Create the database:
+CREATE DATABASE $APP_DB_NAME WITH OWNER=$APP_DB_USER
+                                  LC_COLLATE='en_US.utf8'
+                                  LC_CTYPE='en_US.utf8'
+                                  ENCODING='UTF8'
+                                  TEMPLATE=template0;
+EOF
