@@ -51,7 +51,7 @@ then
 fi
 
 # Update package list and upgrade all packages
-yum -y update
+# yum -y update
 
 # Install EPEL repo
 yum -y install epel-release
@@ -60,16 +60,20 @@ yum -y install epel-release
 yum -y install libicu libxslt
 
 # Install PostgreSQL
-rpm -ivh https://yum.postgresql.org/10/redhat/rhel-7-x86_64/postgresql10-libs-10.4-1PGDG.rhel7.x86_64.rpm
-rpm -ivh https://yum.postgresql.org/10/redhat/rhel-7-x86_64/postgresql10-10.4-1PGDG.rhel7.x86_64.rpm
-rpm -ivh https://yum.postgresql.org/10/redhat/rhel-7-x86_64/postgresql10-server-10.4-1PGDG.rhel7.x86_64.rpm
-rpm -ivh https://yum.postgresql.org/10/redhat/rhel-7-x86_64/postgresql10-contrib-10.4-1PGDG.rhel7.x86_64.rpm
+#rpm -ivh https://yum.postgresql.org/10/redhat/rhel-7-x86_64/postgresql10-libs-10.4-1PGDG.rhel7.x86_64.rpm
+#rpm -ivh https://yum.postgresql.org/10/redhat/rhel-7-x86_64/postgresql10-10.4-1PGDG.rhel7.x86_64.rpm
+#rpm -ivh https://yum.postgresql.org/10/redhat/rhel-7-x86_64/postgresql10-server-10.4-1PGDG.rhel7.x86_64.rpm
+#rpm -ivh https://yum.postgresql.org/10/redhat/rhel-7-x86_64/postgresql10-contrib-10.4-1PGDG.rhel7.x86_64.rpm
+sudo rpm -Uvh https://yum.postgresql.org/10/redhat/rhel-7-x86_64/pgdg-redhat-repo-latest.noarch.rpm
+sudo yum install  -y  postgresql10-server  postgresql10-contrib
 
 # Install PGDG repo
-rpm -ivh https://download.postgresql.org/pub/repos/yum/10/redhat/rhel-7-x86_64/pgdg-centos10-10-2.noarch.rpm
+#rpm -ivh https://download.postgresql.org/pub/repos/yum/10/redhat/rhel-7-x86_64/pgdg-centos10-10-2.noarch.rpm
 
 # Install pglogical repo
-rpm -ivh http://packages.2ndquadrant.com/pglogical/yum-repo-rpms/pglogical-rhel-1.0-3.noarch.rpm
+#rpm -ivh http://packages.2ndquadrant.com/pglogical/yum-repo-rpms/pglogical-rhel-1.0-3.noarch.rpm
+
+sudo curl https://access.2ndquadrant.com/api/repository/dl/default/release/10/rpm | bash
 
 # Install pglogical
 yum -y install postgresql10-pglogical
@@ -106,19 +110,39 @@ echo "max_worker_processes = 10" >> "$PG_CONF"
 echo "shared_preload_libraries = 'pglogical'" >> "$PG_CONF"
 
 # pglogical specific authentication
-echo "local   all           omnidb                            trust" >> "$PG_HBA"
-echo "host    all           omnidb       127.0.0.1/32         trust" >> "$PG_HBA"
-echo "host    all           omnidb       ::1/128              trust" >> "$PG_HBA"
-echo "local   replication   omnidb                            trust" >> "$PG_HBA"
-echo "host    replication   omnidb       127.0.0.1/32         trust" >> "$PG_HBA"
-echo "host    replication   omnidb       ::1/128              trust" >> "$PG_HBA"
-echo "host    all           omnidb       10.33.3.114/32       trust" >> "$PG_HBA"
-echo "host    replication   omnidb       10.33.3.114/32       trust" >> "$PG_HBA"
-echo "host    all           omnidb       10.33.3.115/32       trust" >> "$PG_HBA"
-echo "host    replication   omnidb       10.33.3.115/32       trust" >> "$PG_HBA"
+# echo "local   all           omnidb                            trust" >> "$PG_HBA"
+# echo "host    all           omnidb       127.0.0.1/32         trust" >> "$PG_HBA"
+# echo "host    all           omnidb       ::1/128              trust" >> "$PG_HBA"
+# echo "local   replication   omnidb                            trust" >> "$PG_HBA"
+# echo "host    replication   omnidb       127.0.0.1/32         trust" >> "$PG_HBA"
+# echo "host    replication   omnidb       ::1/128              trust" >> "$PG_HBA"
+# echo "host    all           omnidb       10.33.3.114/32       trust" >> "$PG_HBA"
+# echo "host    replication   omnidb       10.33.3.114/32       trust" >> "$PG_HBA"
+# echo "host    all           omnidb       10.33.3.115/32       trust" >> "$PG_HBA"
+# echo "host    replication   omnidb       10.33.3.115/32       trust" >> "$PG_HBA"
 
 # Append to pg_hba.conf to add password auth:
-echo "host    all           all          all                  md5" >> "$PG_HBA"
+# echo "host    all           all          all                  md5" >> "$PG_HBA"
+
+sudo echo "
+# Database administrative login by Unix domain socket
+local   all             postgres                                peer
+
+# TYPE  DATABASE        USER            ADDRESS                 METHOD
+
+# "local" is for Unix domain socket connections only
+local   all             all                                     peer
+# IPv4 local connections:
+host    all             all             127.0.0.1/32            md5
+# IPv6 local connections:
+host    all             all             ::1/128                 md5
+# Allow replication connections from localhost, by a user with the
+# replication privilege.
+local   replication     all                                     peer
+host    replication     all             127.0.0.1/32            md5
+host    replication     all             ::1/128                 md5
+host    all             all             all                     md5
+" > "$PG_HBA"
 
 # Restart so that all new config is loaded:
 systemctl restart postgresql-10

@@ -1,4 +1,11 @@
-Vagrant.configure("2") do |config|
+# -*- mode: ruby -*-
+# vi: set ft=ruby :
+Vagrant.configure(2) do |config|
+  if (/cygwin|mswin|mingw|bccwin|wince|emx/ =~ RUBY_PLATFORM) != nil
+    config.vm.synced_folder ".", "/vagrant", mount_options: ["dmode=700,fmode=600"]
+  else
+    config.vm.synced_folder ".", "/vagrant"
+  end
   #config.vbguest.auto_update = false
   config.vm.define "xlgtm" do |xlgtm|
     xlgtm.vm.box = "bento/ubuntu-18.04"
@@ -47,5 +54,10 @@ Vagrant.configure("2") do |config|
     xldata2.vm.provision "shell", preserve_order: true, path: "install.sh"
     xldata2.vm.provision "shell", preserve_order: true, path: "init.sh", args: "datanode 40102 10.33.1.114 10.33.1.0/24"
     xldata2.vm.provision "shell", preserve_order: true, path: "start.sh", args: "datanode", run: "always"
+  end
+  if Vagrant.has_plugin?("vagrant-vbguest")
+    config.vbguest.auto_update = false
+    config.vbguest.no_install = true
+    config.vbguest.no_remote = true
   end
 end
