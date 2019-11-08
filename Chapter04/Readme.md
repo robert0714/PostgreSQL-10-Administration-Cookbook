@@ -151,3 +151,6 @@ RELOAD
 ```
 
 7. Finally, verify that PgBouncer's **max_client_conn** parameter does not exceed the **max_connections** parameter on PostgreSQL.
+
+```bash
+```

@@ -1,0 +1,49 @@
+[11/08/2019 03:29:45] INFO [OmniDB_app.Init:318] Starting OmniDB websocket...
+[11/08/2019 03:29:45] INFO [OmniDB_app.Init:320] Checking port availability...
+[11/08/2019 03:29:45] INFO [OmniDB_app.Init:342] Starting websocket server at port 25482.
+[11/08/2019 03:29:45] INFO [OmniDB_app.QueryServer:657] *** Starting OmniDB ***
+[11/08/2019 03:29:45] INFO [OmniDB_app.Init:253] Starting OmniDB server...
+[11/08/2019 03:29:45] INFO [OmniDB_app.Init:255] Checking port availability...
+[11/08/2019 03:29:45] INFO [OmniDB_app.Init:289] Starting server OmniDB 2.16.0 at 0.0.0.0:8080.
+[11/08/2019 03:30:12] INFO [OmniDB_app.views.login:204] User "admin" logged in.
+[11/08/2019 03:50:53] INFO [OmniDB_app.Init:318] Starting OmniDB websocket...
+[11/08/2019 03:50:53] INFO [OmniDB_app.Init:320] Checking port availability...
+[11/08/2019 03:50:53] INFO [OmniDB_app.Init:342] Starting websocket server at port 25482.
+[11/08/2019 03:50:53] INFO [OmniDB_app.QueryServer:657] *** Starting OmniDB ***
+[11/08/2019 03:50:53] INFO [OmniDB_app.Init:253] Starting OmniDB server...
+[11/08/2019 03:50:53] INFO [OmniDB_app.Init:255] Checking port availability...
+[11/08/2019 03:50:53] INFO [OmniDB_app.Init:289] Starting server OmniDB 2.16.0 at 0.0.0.0:8080.
+[11/08/2019 03:51:08] INFO [OmniDB_app.views.login:204] User "admin" logged in.
+[11/08/2019 03:58:04] INFO [OmniDB_app.QueryServer:731] *** SQL Command ***
+USER: admin,
+START: 2019-11-08 03:58:04.891005,
+END: 2019-11-08 03:58:04.914920,
+DURATION: 23.915 ms,
+STATUS: success,
+COMMAND: CREATE TABLE customers (
+ login text PRIMARY KEY,
+ full_name text NOT NULL,
+ registration_date timestamptz NOT NULL DEFAULT now()
+)
+[11/08/2019 04:00:31] INFO [OmniDB_app.QueryServer:731] *** SQL Command ***
+USER: admin,
+START: 2019-11-08 04:00:31.784837,
+END: 2019-11-08 04:00:31.808796,
+DURATION: 23.959 ms,
+STATUS: error,
+COMMAND: CREATE PUBLICATION testpub
+FOR TABLE public.customers
+--FOR ALL TABLES
+--WITH ( publish = ''insert, update, delete, truncate'' )
+
+[11/08/2019 04:01:03] INFO [OmniDB_app.QueryServer:731] *** SQL Command ***
+USER: admin,
+START: 2019-11-08 04:01:03.729232,
+END: 2019-11-08 04:01:03.766766,
+DURATION: 37.534 ms,
+STATUS: success,
+COMMAND: CREATE PUBLICATION testpub
+FOR TABLE public.customers
+--FOR ALL TABLES
+--WITH ( publish = ''insert, update, delete, truncate'' )
+

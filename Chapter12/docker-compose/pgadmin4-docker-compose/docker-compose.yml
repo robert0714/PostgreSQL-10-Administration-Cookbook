@@ -1,0 +1,13 @@
+version: '3'
+services:
+  pgadmin4:
+    container_name: pgadmin4
+    restart: always
+    image: dpage/pgadmin4
+    environment:
+    - PGADMIN_DEFAULT_EMAIL=user@domain.com
+    - PGADMIN_DEFAULT_PASSWORD=SuperSecret
+    - TZ=Asia/Taipei
+    #    network_mode:  "host"
+    ports: 
+     - "80:80" 
