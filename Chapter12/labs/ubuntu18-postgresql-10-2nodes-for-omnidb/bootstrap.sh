@@ -62,6 +62,9 @@ then
   wget --quiet -O - https://apt.postgresql.org/pub/repos/apt/ACCC4CF8.asc | apt-key add -
 fi
 
+# Set Locale
+sudo timedatectl set-timezone Asia/Taipei
+
 # Update package list and upgrade all packages
 apt-get update
 apt-get -y upgrade

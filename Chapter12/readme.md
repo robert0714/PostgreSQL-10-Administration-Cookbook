@@ -827,9 +827,10 @@ The BDR experts at 2ndQuadrant will help you evaluate the best deployment option
 
 *  **Postgres Cloud Manager (PCM)**. PCM offers a quick and easy deployment of highly available BDR clusters using Trusted Postgres Architecture (TPA) from 2ndQuadrant. PCM is available for deployment on the Cloud – both public and private.
 
+
 *  **Docker Images**. This option provides a flexible and quick deployment model for Postgres-BDR clusters. Docker images manage to reduce deployment times significantly, allowing you to create containers without external runtime requirements. It gives you the possibility of creating a personalized architecture with minimal configuration.
 
-*  **Binary Repository**. Postgres-BDR is available for deployment via 2ndQuadrant’s yum & apt repositories – designed and maintained for production use. The binaries, in the form of RPMs and DEBs respectively, can be installed using the native package managers of the operating system of your choice. This provides a stable and reliable access to the software, on-premise and in the Cloud.
+*  **Binary Repository**. Postgres-BDR is available for deployment via [2ndQuadrant’s yum & apt repositories](http://bdr-project.org/docs/stable/installation-packages.html) – designed and maintained for production use. The binaries, in the form of RPMs and DEBs respectively, can be installed using the native package managers of the operating system of your choice. This provides a stable and reliable access to the software, on-premise and in the Cloud.
 
 
  2ndQuadrant’s PostgreSQL Solution for Single Master with High Availability addresses exactly that requirement, and is based on years of experience fulfilling enterprise needs. The architecture relies on best practices and provides high levels of reliability for production use.
