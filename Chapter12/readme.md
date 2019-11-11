@@ -32,7 +32,7 @@ postgres=# \du
 postgres=# CREATE USER repuser
              REPLICATION
              LOGIN
-             CONNECTION LIMIT 2
+             CONNECTION LIMIT 10
              ENCRYPTED PASSWORD 'changeme';
 CREATE ROLE
 postgres=# \du+
@@ -60,47 +60,36 @@ host   replication   all  0.0.0.0/0     trust
 ### Without  an additional archive (method-1)
 step 8 Take a base  backup (with an additional archive)
 ```bash
--bash-4.2$ pg_basebackup  -d 'dbname=postgres'  -D /tmp/test
--bash-4.2$ ls /tmp/test
-backup_label  current_logfiles  log           pg_dynshmem  pg_ident.conf  pg_multixact  pg_replslot  pg_snapshots  pg_stat_tmp  pg_tblspc    PG_VERSION  pg_xact               postgresql.conf
-base          global            pg_commit_ts  pg_hba.conf  pg_logical     pg_notify     pg_serial    pg_stat       pg_subtrans  pg_twophase  pg_wal      postgresql.auto.conf
--bash-4.2$ 
--bash-4.2$ pg_basebackup  -d 'dbname=postgres' --wal-method=stream -D /tmp/test1
--bash-4.2$ ls /tmp/test1
-backup_label  current_logfiles  log           pg_dynshmem  pg_ident.conf  pg_multixact  pg_replslot  pg_snapshots  pg_stat_tmp  pg_tblspc    PG_VERSION  pg_xact               postgresql.conf
-base          global            pg_commit_ts  pg_hba.conf  pg_logical     pg_notify     pg_serial    pg_stat       pg_subtrans  pg_twophase  pg_wal      postgresql.auto.conf
--bash-4.2$ 
--bash-4.2$ pg_basebackup  -d 'dbname=postgres' --wal-method=stream   --max-rate=RATE  -D /tmp/test2
-pg_basebackup: transfer rate "RATE" is not a valid value
--bash-4.2$ pg_basebackup  -d 'dbname=postgres' --wal-method=stream   --max-rate=3000  -D /tmp/test2
--bash-4.2$ pg_basebackup  -d 'dbname=postgres' --wal-method=stream   --max-rate=30000  --slot=myslotname --create-slot -D /tmp/test3
--bash-4.2$ 
--bash-4.2$ ls /tmp/test3
-backup_label  current_logfiles  log           pg_dynshmem  pg_ident.conf  pg_multixact  pg_replslot  pg_snapshots  pg_stat_tmp  pg_tblspc    PG_VERSION  pg_xact               postgresql.conf
-base          global            pg_commit_ts  pg_hba.conf  pg_logical     pg_notify     pg_serial    pg_stat       pg_subtrans  pg_twophase  pg_wal      postgresql.auto.conf
--bash-4.2$ pg_basebackup  -d 'dbname=postgres' --wal-method=stream   --max-rate=30000  --slot=myslotname --create-slot  --write-recovery-conf  -D /tmp/test4
-pg_basebackup: could not send replication command "CREATE_REPLICATION_SLOT "myslotname" PHYSICAL RESERVE_WAL": ERROR:  replication slot "myslotname" already exists
-pg_basebackup: removing data directory "/tmp/test4"
--bash-4.2$ pg_basebackup  -d 'dbname=postgres' --wal-method=stream   --max-rate=30000   --write-recovery-conf  -D /tmp/test4
 -bash-4.2$ pg_basebackup  -D slave  --checkpoint=fast  --wal-method=stream -U repuser --write-recovery-conf -F t  -R   -h 100.100.100.101
 [root@node1 tmp]# ls slave/
 base.tar  pg_wal.tar
 [root@node1 tmp]# cd slave/
 [root@node1 slave]# ls
 base.tar  pg_wal.tar
-[root@node1 slave]# scp *.tar 100.100.100.102:/var/lib/pgsql/11/data/
+[root@node1 tmp]# ssh 100.100.100.102 rm -rf   /var/lib/pgsql/11/data/*
 The authenticity of host '100.100.100.102 (100.100.100.102)' can't be established.
-ECDSA key fingerprint is SHA256:2tISk9G3OnQbrtzEndowRqo6wCZnEHiEU/J7Mr3kOcQ.
-ECDSA key fingerprint is MD5:d6:9b:6e:cb:29:b0:83:6d:86:d2:30:ae:93:52:7d:db.
-Are you sure you want to continue connecting (yes/no)? yes 
+ECDSA key fingerprint is SHA256:FTkFcjNw0StRtdr1fZyBWG6eeLO94Lw4ACGA5x4Ohow.
+ECDSA key fingerprint is MD5:61:71:6a:f6:3c:45:0b:5e:f2:61:90:f7:4b:ba:1d:fe.
+Are you sure you want to continue connecting (yes/no)? yes
 Warning: Permanently added '100.100.100.102' (ECDSA) to the list of known hosts.
 root@100.100.100.102's password: 
-base.tar                                                                                                                                                                                                                                                100%   24MB  46.3MB/s   00:00    
-pg_wal.tar    
+[root@node1 tmp]# cd slave/
+[root@node1 slave]# scp *.tar 100.100.100.102:/var/lib/pgsql/11/data/
+root@100.100.100.102's password: 
+base.tar                                                       23MB  44.9MB/s   00:00    
+pg_wal.tar                                                     16MB  62.0MB/s   00:00    
+[root@node1 slave]# ssh 100.100.100.102
+root@100.100.100.102's password: 
+
+This system is built by the Bento project by Chef Software
+More information can be found at https://github.com/chef/bento/README.md
+[root@node2 ~]#
 ```
+
 We connect the slave server, enter the folder ***/var/lib/pgsql/11/data***.
 
 ```bash
+[root@node2 ~]# cd /var/lib/pgsql/11/data
 [root@node2 data]# tar -xvf  pg_wal.tar 
 [root@node2 data]# tar -xvf  base.tar 
 [root@node2 data]# rm -rf *.tar
@@ -136,6 +125,39 @@ If it does, the slave will also carry a WAL receiver process :
 ```
 
 If those processes are there, we are already on the right track, and replication is working as expected. Both sides are now talking to each other and WAL flows from the master to the slave.
+
+```bash
+[root@node1 data]# su postgres
+bash-4.2$ psql
+psql (11.5)
+Type "help" for help.
+
+postgres=# ALTER USER postgres WITH PASSWORD '123';
+ALTER ROLE
+postgres=# 
+```
+psql access to app database user via VM:
+
+```bash
+  vagrant ssh
+  sudo su - postgres
+  PGUSER=postgres PGPASSWORD=123 psql -h localhost postgres
+```
+
+In real world :
+
+```bash
+ [ centos7-postgresql-11-lab]$ vagrant ssh node1
+Last login: Mon Nov 11 05:57:38 2019 from 10.0.2.2
+
+[vagrant@node1 ~]$ sudo su - postgres
+Last login: Mon Nov 11 06:18:10 UTC 2019 on pts/0
+-bash-4.2$ PGUSER=postgres PGPASSWORD=123 psql -h localhost postgres
+psql (11.5)
+Type "help" for help.
+
+postgres=# 
+```
 
 #### Replaying the transaction log
 Here is a sample ***recovery.conf*** file about modification:
