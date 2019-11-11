@@ -368,6 +368,121 @@ anotherdb = port=5437 host=localhost
 sparedb = port=5435 host=localhost
 ```
 
+The below is a detail script :
+
+```bash
+[vagrant@node1 ~]$ cd /tmp
+[vagrant@node1 tmp]$ sudo -u postgres  /usr/pgsql-11/bin/initdb -D /var/lib/pgsql/11/anotherdb
+(ommit...)
+Success. You can now start the database server using:
+
+    /usr/pgsql-11/bin/pg_ctl -D /var/lib/pgsql/11/anotherdb -l logfile start
+
+[vagrant@node1 tmp]$ sudo -u postgres  /usr/pgsql-11/bin/initdb -D /var/lib/pgsql/11/sparedb
+T(ommit...)
+Success. You can now start the database server using:
+
+    /usr/pgsql-11/bin/pg_ctl -D /var/lib/pgsql/11/sparedb -l logfile start
+
+[vagrant@node1 tmp]$ sudo -u postgres  rm -rf  /var/lib/pgsql/11/*
+[vagrant@node1 tmp]$ sudo -u postgres  /usr/pgsql-11/bin/initdb -D /var/lib/pgsql/11/myfirstdb
+(ommit...)
+Success. You can now start the database server using:
+
+    /usr/pgsql-11/bin/pg_ctl -D /var/lib/pgsql/11/myfirstdb -l logfile start
+
+[vagrant@node1 tmp]$ sudo -u postgres  echo "
+# Database administrative login by Unix domain socket
+local   all             postgres                                peer
+
+# TYPE  DATABASE        USER            ADDRESS                 METHOD
+
+# \"local\" is for Unix domain socket connections only
+local   all             all                                     peer
+# IPv4 local connections:
+host    all             all             127.0.0.1/32            md5
+# IPv6 local connections:
+host    all             all             ::1/128                 md5
+# Allow replication connections from localhost, by a user with the
+# replication privilege.
+local   replication     all                                     trust
+host    replication     all             127.0.0.1/32            trust
+host    replication     all             ::1/128                 trust
+host    all             all             all                     md5
+" > /var/lib/pgsql/11/myfirstdb/pg_hba.conf
+[vagrant@node1 tmp]$ yes | cp -f /var/lib/pgsql/11/myfirstdb/pg_hba.conf /var/lib/pgsql/11/anotherdb/pg_hba.conf
+cp: overwrite ‘/var/lib/pgsql/11/anotherdb/pg_hba.conf’? [root@node1 tmp]#
+[root@node1 tmp]# 
+cp: overwrite ‘/var/lib/pgsql/11/sparedb/pg_hba.conf’? [root@node1 tmp]# exit
+ [root@node1 tmp]# echo "port = 5437" >> /var/lib/pgsql/11/anotherdb/postgresql.conf
+ [root@node1 tmp]# echo "port = 5435" >> /var/lib/pgsql/11/sparedb/postgresql.conf
+[vagrant@node1 tmp]$ sudo -u  postgres /usr/pgsql-11/bin/pg_ctl -D /var/lib/pgsql/11/myfirstdb -l logfile start
+waiting for server to start.... done
+server started
+[vagrant@node1 tmp]$ sudo -u  postgres /usr/pgsql-11/bin/pg_ctl -D /var/lib/pgsql/11/anotherdb -l logfile start
+waiting for server to start.... done
+server started
+[vagrant@node1 tmp]$ sudo -u  postgres /usr/pgsql-11/bin/pg_ctl -D /var/lib/pgsql/11/sparedb -l logfile start
+waiting for server to start.... done
+server started
+[vagrant@node1 tmp]$ sudo -u postgres   psql --port 5437  -h /var/run/postgresql
+psql (11.5)
+Type "help" for help.
+
+postgres=# \c anotherdb;
+FATAL:  database "anotherdb" does not exist
+Previous connection kept
+postgres=# CREATE DATABASE anotherdb WITH OWNER=postgres
+                                  LC_COLLATE='en_US.utf8'
+                                  LC_CTYPE='en_US.utf8'
+                                  ENCODING='UTF8'
+                                  TEMPLATE=template0;
+postgres=# \c anotherdb;
+You are now connected to database "anotherdb" as user "postgres".
+anotherdb=# \q;
+[vagrant@node1 tmp]$ sudo -u postgres   psql --port 5437  -h /var/run/postgresql
+psql (11.5)
+Type "help" for help.
+
+postgres=# \c anotherdb;
+FATAL:  database "anotherdb" does not exist
+Previous connection kept
+postgres=# CREATE DATABASE sparedb WITH OWNER=postgres
+                                  LC_COLLATE='en_US.utf8'
+                                  LC_CTYPE='en_US.utf8'
+                                  ENCODING='UTF8'
+                                  TEMPLATE=template0;
+postgres=# \c sparedb;
+You are now connected to database "sparedb" as user "postgres".
+anotherdb=# \q;
+[vagrant@node1 tmp]$  sudo -u postgres   psql 
+psql (11.5)
+Type "help" for help.
+
+postgres=# show port ;
+ port 
+------
+ 5432
+(1 row)
+
+postgres=#
+psql (11.5)
+Type "help" for help.
+
+postgres=# \c anotherdb;
+FATAL:  database "anotherdb" does not exist
+Previous connection kept
+postgres=# CREATE DATABASE myfirstdb WITH OWNER=postgres
+                                  LC_COLLATE='en_US.utf8'
+                                  LC_CTYPE='en_US.utf8'
+                                  ENCODING='UTF8'
+                                  TEMPLATE=template0;
+postgres=# \c myfirstdb;
+You are now connected to database "myfirstdb" as user "postgres".
+anotherdb=# \q;
+
+```
+
 2. Once you have started PgBouncer, you can connect to the first database:
 
 ```bash
