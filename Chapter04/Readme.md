@@ -297,7 +297,7 @@ log_pooler_errors = 0
 4. You may wish to create the **users.txt** file by directly copying the details from the server. This can be done by using the following **psql** script:
 
 ```bash
-[root@node1 pgbouncer]# chown postgres:postgres users.txt 
+[root@node1 pgbouncer]# chown -R  postgres:postgres /etc/pgbouncer
 [root@node1 pgbouncer]# sudo -u postgres  psql 
 psql (11.5)
 Type "help" for help.
@@ -500,6 +500,20 @@ server_version
 11.1
 (1 row)
 ```
+In fact , I found ....
+
+```bash
+-bash-4.2$ psql -p 6432 -h 127.0.0.1 -U postgres myfirstdb
+psql: ERROR:  bouncer config error
+-bash-4.2$ exit
+logout
+[root@node1 /]# cat /var/lib/pgsql/pgbouncer.log
+(ommit...)
+2019-11-11 08:17:29.668 UTC [14326] ERROR C-0x16b7640: (nodb)/(nouser)@127.0.0.1:32804 auth_type=any requires forced user
+2019-11-11 08:17:29.668 UTC [14326] LOG C-0x16b7640: (nodb)/(nouser)@127.0.0.1:32804 closing because: bouncer config error (age=0s)
+(ommit...)
+```
+
 
 3. Now, you can connect to the anotherdb database as if it were on the same server:
 
