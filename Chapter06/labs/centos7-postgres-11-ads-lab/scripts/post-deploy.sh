@@ -73,7 +73,7 @@ local   replication     all                                     trust
 host    replication     all             127.0.0.1/32            trust
 host    replication     all             ::1/128                 trust
 # host    all             all             all                     md5
-host    all             all             all                      ldap ldapserver=192.168.2.12 ldapsearchattribute=\"sAMAccountName=\"  ldapbasedn=\"dc=iead,dc=local\"  ldapport=389
+host    all             all             all                      ldap ldapserver=192.168.2.12   ldapprefix=\"cn=\"  ldapsuffix=\",OU=TDD19,OU=TDD10,OU=TDD00,OU=IISI,DC=iead,DC=local\"
 " > /var/lib/pgsql/11/data/pg_hba.conf
 # echo "local   all           omnidb                            trust" >> "$PG_HBA"
 # echo "host    all           omnidb       127.0.0.1/32         trust" >> "$PG_HBA"
